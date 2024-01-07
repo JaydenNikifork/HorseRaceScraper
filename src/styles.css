@@ -1,0 +1,16 @@
+td {
+    font-size: 'large'
+
+}
+
+.pos {
+    color: green;
+}
+
+.neg {
+    color: red;
+}
+
+.rowStart {
+    font-weight: bold;
+}
