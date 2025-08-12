@@ -14,19 +14,15 @@ const login = async () => {
             // headless: true,
             args: ["--fast-start", "--disable-extensions", "--no-sandbox"],
             ignoreHTTPSErrors: true
-            
+
         });
-        
+
         page = await browser.newPage();
-        
+
         //login
         await page.goto('https://www.hpibet.com/Account/SignIn', { waitUntil: 'networkidle2' });
-        
+
         await page.$eval('#Username', el => el.value = 'swoosh');
-        await page.$eval('#Password', el => el.value = 'mewTwo7!');
-        const signInBtn = await page.waitForSelector('[value="Sign in"]');
-        await signInBtn.click();
-        console.log("Logged In");
         return 200;
     } catch (err) {
         return 400;
@@ -40,7 +36,7 @@ const getDiffs = async () => {
             await page.waitForSelector('[data-bind="click: $root.redirectToTrack, css: { clickable: $data.HasRaceInfo }"]');
             const divs = await page.$$('[data-bind="click: $root.redirectToTrack, css: { clickable: $data.HasRaceInfo }"]');
             let woodbine;
-            
+
             for (const div of divs) {
                 const innerText = await page.evaluate(el => el.innerText, div);
 
@@ -128,6 +124,115 @@ const getDiffs = async () => {
     }
 }
 
+const getDailyDoubleImpliedOdds = async () => {
+    try {
+        // get data
+        try {
+            await page.waitForSelector('[data-bind="click: $root.redirectToTrack, css: { clickable: $data.HasRaceInfo }"]');
+            const divs = await page.$$('[data-bind="click: $root.redirectToTrack, css: { clickable: $data.HasRaceInfo }"]');
+            let woodbine;
+
+            for (const div of divs) {
+                const innerText = await page.evaluate(el => el.innerText, div);
+
+                if (RegExp(process.env.TRACK).test(innerText)) {
+                    woodbine = div;
+                    console.log("FOUND WOODBINE!");
+                    break;
+                }
+            }
+
+            await woodbine.click();
+            console.log('CLICKED WOODBINE');
+            await sleep(2000);
+        } catch (err) {}
+
+        await page.waitForSelector('#race-info-content');
+
+        const poolTotalsBtn = await page.waitForSelector('#pooltotals-tab');
+        await poolTotalsBtn.click();
+        console.log('CLICKED POOLS TOTALS');
+
+        await page.waitForSelector(`[data-bind="text: IsScratched ? '' : $data.WinPercent"]`);
+        let winPays = await page.$$(`[data-bind="text: IsScratched ? '' : $data.WinPercent"]`);
+        winPays = winPays.map(async (winPay) => (
+            await page.evaluate(el => el.innerText, winPay)
+        ));
+        winPays = await Promise.all(winPays);
+
+        let winProbs = winPays.map(winPay => Number(winPay));
+
+        console.log(winProbs);
+
+        const probablesTabBtn = await page.waitForSelector('#probables-tab');
+        await probablesTabBtn.click();
+        console.log('CLICKED PROBABLES TABLE');
+
+        await page.waitForSelector('[data-bind="css: { active: tab.isSelected }, click: $root.setProbable"]');
+        const probables = await page.$$('[data-bind="css: { active: tab.isSelected }, click: $root.setProbable"]');
+        let exacta;
+        for (const probable of probables) {
+            const innerText = await page.evaluate(el => el.innerText, probable);
+
+            if (/Daily Double/.test(innerText)) {
+                exacta = probable;
+                console.log("FOUND DAILY DOUBLE!");
+                break;
+            }
+        }
+
+        await exacta.click();
+
+        const selector = `[data-bind="text: probable.IsScratched ? '' : Hpi.utilities.formatMoney(probable.Amount, 0), css: { scratched: probable.IsScratched, 'lowest-value lead': probable.IsLowest }, attr: {'aria-hidden': IsScratched}"]`;
+        await page.waitForSelector(selector);
+        console.log("FOUND DAILY DOUBLE PAYOUTS!");
+        let exactaAmts = await page.$$(selector);
+        exactaAmts = exactaAmts.map(async (exactaAmt) => (
+            await page.evaluate(el => el.textContent, exactaAmt)
+        ));
+        exactaAmts = await Promise.all(exactaAmts);
+        console.log(exactaAmts);
+        exactaAmts = exactaAmts.map(exactaAmt => Number(exactaAmt.replace(/\$|,/g, '')));
+        console.log("FOUND DAILY DOUBLE PAYOUTS WITH FILTERED TEXT!");
+        console.log(exactaAmts);
+
+        const numRows = winPays.length;
+        const numCols = exactaAmts.length / numRows;
+        const getRowSum = (rowNum) => {
+            let sum = 0;
+            for (let i = rowNum * numCols; i < rowNum * numCols + numCols; ++i) {
+                if (exactaAmts[i] > 0) sum += 1 / exactaAmts[i];
+            }
+            return sum;
+        }
+
+        let ddProbs = exactaAmts.map((ddPay, idx) => {
+            // console.log("Row sum:", getRowSum(Math.floor(idx / numCols)));
+            // return (1 / ddPay) / getRowSum(Math.floor(idx / numCols));
+            // console.log(winProbs[Math.floor(idx / numCols)] / 100);
+            // console.log(2 * 0.77 / ddPay);
+            // console.log(2 * 0.77 / ddPay / (winProbs[Math.floor(idx / numCols)] / 100));
+            return 2 * 0.77 / ddPay / (winProbs[Math.floor(idx / numCols)] / 100)
+        });
+        console.log(ddProbs)
+        let ddOdds = ddProbs.map(ddProb => {
+            return (1 - ddProb) / ddProb * 0.77;
+            // return ddProb;
+        })
+        console.log(ddOdds)
+        return {
+            numRows,
+            numCols,
+            ddOdds,
+            winProbs
+        };
+
+    } catch (err) {
+        console.error(err);
+        return {};
+    }
+}
+
 const close = async () => {
     await browser.close();
 }
@@ -135,5 +240,6 @@ const close = async () => {
 module.exports = {
     login,
     getDiffs,
+    getDailyDoubleImpliedOdds,
     close
 }

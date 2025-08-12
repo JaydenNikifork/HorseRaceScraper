@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
-const { login, getDiffs, close } = require('./src/main.js');
+const { login, getDiffs, close, getDailyDoubleImpliedOdds } = require('./src/main.js');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -18,8 +18,12 @@ app.get('/login', async (req, res) => {
 
 app.get('/getData', async (req, res) => {
     const diffs = await getDiffs();
+    const ddOdds = await getDailyDoubleImpliedOdds();
 
-    res.send(diffs);
+    res.send({
+        diffs,
+        ddOdds
+    });
 });
 
 app.get('/logout', async (req, res) => {

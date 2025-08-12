@@ -1,6 +1,9 @@
-td {
-    font-size: 'large'
-
+td, th {
+    font-size: 30px;
+    border-left: black 1px solid;
+    border-top: black 1px solid;
+    min-width: 70px;
+    text-align: center;
 }
 
 .pos {
