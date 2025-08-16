@@ -124,8 +124,7 @@ const getDiffs = async () => {
     }
 }
 
-const getDailyDoubleImpliedOdds = async () => {
-    try {
+const getDailyDoubleImpliedOdds = async () => { try {
         // get data
         try {
             await page.waitForSelector('[data-bind="click: $root.redirectToTrack, css: { clickable: $data.HasRaceInfo }"]');
@@ -207,12 +206,10 @@ const getDailyDoubleImpliedOdds = async () => {
         }
 
         let ddProbs = exactaAmts.map((ddPay, idx) => {
-            // console.log("Row sum:", getRowSum(Math.floor(idx / numCols)));
-            // return (1 / ddPay) / getRowSum(Math.floor(idx / numCols));
-            // console.log(winProbs[Math.floor(idx / numCols)] / 100);
-            // console.log(2 * 0.77 / ddPay);
-            // console.log(2 * 0.77 / ddPay / (winProbs[Math.floor(idx / numCols)] / 100));
             return 2 * 0.77 / ddPay / (winProbs[Math.floor(idx / numCols)] / 100)
+        });
+        let ddCondProbs = exactaAmts.map((ddPay, idx) => {
+            return (1 / ddPay) / getRowSum(Math.floor(idx / numCols));
         });
         console.log(ddProbs)
         let ddOdds = ddProbs.map(ddProb => {
@@ -223,7 +220,9 @@ const getDailyDoubleImpliedOdds = async () => {
         return {
             numRows,
             numCols,
+            ddCondProbs,
             ddOdds,
+            exactaAmts,
             winProbs
         };
 
