@@ -1,1 +1,0 @@
-start chrome %cd%/src/index.html

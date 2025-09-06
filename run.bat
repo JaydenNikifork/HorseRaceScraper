@@ -1,3 +1,3 @@
-start cmd /k call server.bat
-SLEEP 10
-call client.bat
+call npm install
+start chrome %cd%/src/index.html
+call npm start

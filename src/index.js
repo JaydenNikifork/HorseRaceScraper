@@ -91,7 +91,8 @@ function updateTable() {
             for (let a = 0; a < numRows; ++a) {
                 let sum = 0;
                 for (let b = 0; b < numCols; ++b) {
-                    sum += 2 / payouts[a * numCols + b] * 0.77;
+                    if (payouts[a * numCols + b])
+                        sum += 2 / payouts[a * numCols + b] * 0.77;
                 }
                 rightCol.push(sum);
             }
@@ -134,7 +135,7 @@ function updateTable() {
                 // tbody.insertBefore(row, null);
 
                 let rowData = document.createElement('td');
-                if (Math.abs(rightCol[a-1]) <= 0.01 || !rightCol[a-1]) {
+                if (Math.abs(rightCol[a-1]) <= 0.01 || !rightCol[a-1] || rightCol[a-1] === Infinity) {
                     rowData.innerText = '-';
                 } else if (rightCol[a-1] <= 5) {
                     rowData.innerText = Math.round(rightCol[a-1] * 10) / 10;
@@ -146,7 +147,7 @@ function updateTable() {
                 console.log("win probs", winProbs[a])
                 let winPoolOdds = (100 - winProbs[a - 1]) / winProbs[a - 1] * 0.77;
                 rowData = document.createElement('td');
-                if (Math.abs(winPoolOdds) <= 0.01 || !winPoolOdds) {
+                if (Math.abs(winPoolOdds) <= 0.01 || !winPoolOdds || winPoolOdds === Infinity) {
                     rowData.innerText = '-';
                 } else if (winPoolOdds <= 5) {
                     rowData.innerText = Math.round(winPoolOdds * 10) / 10;
@@ -161,7 +162,8 @@ function updateTable() {
             for (let a = 0; a < numCols; ++a) {
                 let sum = 0;
                 for (let b = 0; b < numRows; ++b) {
-                    sum += 2 / payouts[b * numCols + a] * 0.77;
+                    if (payouts[b * numCols + a])
+                        sum += 2 / payouts[b * numCols + a] * 0.77;
                 }
                 bottomRow.push(sum);
             }
@@ -173,12 +175,12 @@ function updateTable() {
             row.insertBefore(rowData, null);
             for (let a = 0; a < numCols; ++a) {
                 rowData = document.createElement('td');
-                if (Math.abs(rightCol[a]) <= 0.01 || !rightCol[a]) {
+                if (Math.abs(bottomRow[a]) <= 0.01 || !bottomRow[a]) {
                     rowData.innerText = '-';
-                } else if (rightCol[a] <= 5) {
-                    rowData.innerText = Math.round(rightCol[a] * 10) / 10;
+                } else if (bottomRow[a] <= 5) {
+                    rowData.innerText = Math.round(bottomRow[a] * 10) / 10;
                 } else {
-                    rowData.innerText = Math.round(rightCol[a]);
+                    rowData.innerText = Math.round(bottomRow[a]);
                 }
                 row.insertBefore(rowData, null);
             }
